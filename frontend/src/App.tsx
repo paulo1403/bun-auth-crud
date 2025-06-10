@@ -65,7 +65,7 @@ function App() {
           }
         >
           <Route path='urls' element={<UrlsView token={token} />} />
-          <Route path='users' element={<UsersView />} />
+          <Route path='users' element={<UsersView token={token} />} />
           <Route index element={<Navigate to='urls' replace />} />
         </Route>
       </Route>

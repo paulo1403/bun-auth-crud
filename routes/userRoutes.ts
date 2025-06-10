@@ -24,7 +24,29 @@ router.post('/login', async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/users', authenticateToken, requireAdmin, createUserController);
+router.post(
+  '/users',
+  authenticateToken,
+  requireAdmin,
+  async (req: any, res: any) => {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role)
+      return res
+        .status(400)
+        .json({ error: 'Name, email, password and role required' });
+    try {
+      const hashedPassword = require('bcryptjs').hashSync(password, 10);
+      const user = await prisma.user.create({
+        data: { name, email, password: hashedPassword, role },
+      });
+      // Retornar el usuario sin la contraseña
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (e) {
+      res.status(400).json({ error: 'Email must be unique' });
+    }
+  }
+);
 
 router.get('/users', async (req: any, res: any) => {
   const users = await prisma.user.findMany();
@@ -39,18 +61,30 @@ router.get('/users/:id', async (req: any, res: any) => {
   res.json(user);
 });
 
-router.put('/users/:id', async (req: any, res: any) => {
-  const { name, email } = req.body;
-  try {
-    const user = await prisma.user.update({
-      where: { id: Number(req.params.id) },
-      data: { name, email },
-    });
-    res.json(user);
-  } catch (e) {
-    res.status(404).json({ error: 'User not found or email not unique' });
+router.put(
+  '/users/:id',
+  authenticateToken,
+  requireAdmin,
+  async (req: any, res: any) => {
+    const { name, email, role, password } = req.body;
+    try {
+      const data: any = { name, email, role };
+      if (password) {
+        const bcrypt = require('bcryptjs');
+        data.password = bcrypt.hashSync(password, 10);
+      }
+      const user = await prisma.user.update({
+        where: { id: Number(req.params.id) },
+        data,
+      });
+      // Retornar el usuario sin la contraseña
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (e) {
+      res.status(404).json({ error: 'User not found or email not unique' });
+    }
   }
-});
+);
 
 router.delete('/users/:id', async (req: any, res: any) => {
   try {
