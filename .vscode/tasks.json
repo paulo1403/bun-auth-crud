@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Bun Backend",
+      "type": "shell",
+      "command": "bun run index.ts",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
