@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { authenticateToken, requireAdmin } from '../middlewares/auth';
 import {
   loginController,
@@ -26,12 +26,12 @@ router.post('/login', async (req: AuthRequest, res) => {
 
 router.post('/users', authenticateToken, requireAdmin, createUserController);
 
-router.get('/users', async (req, res) => {
+router.get('/users', async (req: any, res: any) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
 
-router.get('/users/:id', async (req, res) => {
+router.get('/users/:id', async (req: any, res: any) => {
   const user = await prisma.user.findUnique({
     where: { id: Number(req.params.id) },
   });
@@ -39,7 +39,7 @@ router.get('/users/:id', async (req, res) => {
   res.json(user);
 });
 
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', async (req: any, res: any) => {
   const { name, email } = req.body;
   try {
     const user = await prisma.user.update({
@@ -52,7 +52,7 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', async (req: any, res: any) => {
   try {
     await prisma.user.delete({ where: { id: Number(req.params.id) } });
     res.status(204).send();
