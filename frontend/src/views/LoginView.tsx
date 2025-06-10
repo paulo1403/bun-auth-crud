@@ -10,6 +10,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
 
 type Props = {
   loading: boolean;
@@ -30,6 +31,7 @@ const schema = yup.object({
 export type LoginForm = yup.InferType<typeof schema>;
 
 export default function LoginView({ loading, error, onLogin }: Props) {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -80,6 +82,15 @@ export default function LoginView({ loading, error, onLogin }: Props) {
               {loading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
+          <Button
+            variant='text'
+            color='secondary'
+            fullWidth
+            sx={{ mt: 2 }}
+            onClick={() => navigate('/forgot-password')}
+          >
+            ¿Olvidaste tu contraseña?
+          </Button>
         </Paper>
       </Box>
     </Container>

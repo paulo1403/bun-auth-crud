@@ -4,14 +4,9 @@ import type { LoginForm } from './views/LoginView';
 import DashboardView from './views/DashboardView';
 import UsersView from './views/UsersView';
 import UrlsView from './views/UrlsView';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
-  useNavigate,
-} from 'react-router-dom';
+import ForgotPasswordView from './views/ForgotPasswordView';
+import ResetPasswordView from './views/ResetPasswordView';
+import { Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 
 function PrivateRoute({ token }: { token: string }) {
   return token ? <Outlet /> : <Navigate to='/login' replace />;
@@ -51,36 +46,34 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <Routes>
+      <Route
+        path='/login'
+        element={
+          <LoginView loading={loading} error={error} onLogin={handleLogin} />
+        }
+      />
+      <Route path='/forgot-password' element={<ForgotPasswordView />} />
+      <Route path='/reset-password' element={<ResetPasswordView />} />
+      <Route element={<PrivateRoute token={token} />}>
+        {' '}
+        {/* Protected routes */}
         <Route
-          path='/login'
+          path='/dashboard'
           element={
-            <LoginView loading={loading} error={error} onLogin={handleLogin} />
+            <DashboardViewRouter token={token} onLogout={handleLogout} />
           }
-        />
-        <Route element={<PrivateRoute token={token} />}>
-          {' '}
-          {/* Protected routes */}
-          <Route
-            path='/dashboard'
-            element={
-              <DashboardViewRouter token={token} onLogout={handleLogout} />
-            }
-          >
-            <Route path='urls' element={<UrlsView token={token} />} />
-            <Route path='users' element={<UsersView />} />
-            <Route index element={<Navigate to='urls' replace />} />
-          </Route>
+        >
+          <Route path='urls' element={<UrlsView token={token} />} />
+          <Route path='users' element={<UsersView />} />
+          <Route index element={<Navigate to='urls' replace />} />
         </Route>
-        <Route
-          path='*'
-          element={
-            <Navigate to={token ? '/dashboard/urls' : '/login'} replace />
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+      </Route>
+      <Route
+        path='*'
+        element={<Navigate to={token ? '/dashboard/urls' : '/login'} replace />}
+      />
+    </Routes>
   );
 }
 

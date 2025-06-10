@@ -61,4 +61,44 @@ router.delete('/users/:id', async (req: any, res: any) => {
   }
 });
 
+// POST /forgot-password
+router.post('/forgot-password', async (req: any, res: any) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const token = require('crypto').randomBytes(32).toString('hex');
+  const expiry = new Date(Date.now() + 60 * 60 * 1000);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { resetToken: token, resetTokenExpiry: expiry },
+  });
+  // En producción se enviaría por email. Aquí lo devolvemos para pruebas
+  res.json({ resetToken: token, expires: expiry });
+});
+
+// POST /reset-password
+router.post('/reset-password', async (req: any, res: any) => {
+  const { token, password } = req.body;
+  if (!token || !password)
+    return res.status(400).json({ error: 'Token and new password required' });
+  const user = await prisma.user.findFirst({
+    where: {
+      resetToken: token,
+      resetTokenExpiry: { gt: new Date() },
+    },
+  });
+  if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+  const hashedPassword = require('bcryptjs').hashSync(password, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      resetToken: null,
+      resetTokenExpiry: null,
+    },
+  });
+  res.json({ message: 'Password updated' });
+});
+
 export default router;
