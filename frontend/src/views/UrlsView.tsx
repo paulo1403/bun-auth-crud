@@ -87,8 +87,13 @@ export default function UrlsView({ token }: Props) {
     {
       field: 'createdAt',
       headerName: 'Creada',
-      width: 150,
-      valueGetter: (params: any) => new Date(params.value).toLocaleString(),
+      width: 180,
+      valueGetter: (params: any) => {
+        const value = params;
+        if (!value) return '';
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? '' : date.toLocaleString();
+      },
     },
   ];
 
