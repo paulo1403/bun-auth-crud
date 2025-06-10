@@ -6,7 +6,14 @@ import UsersView from './views/UsersView';
 import UrlsView from './views/UrlsView';
 import ForgotPasswordView from './views/ForgotPasswordView';
 import ResetPasswordView from './views/ResetPasswordView';
-import { Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 
 function PrivateRoute({ token }: { token: string }) {
   return token ? <Outlet /> : <Navigate to='/login' replace />;
@@ -73,6 +80,7 @@ function App() {
         path='*'
         element={<Navigate to={token ? '/dashboard/urls' : '/login'} replace />}
       />
+      <Route path='/:shortCode' element={<RedirectShortUrl />} />
     </Routes>
   );
 }
@@ -99,6 +107,16 @@ function DashboardViewRouter({
       <Outlet />
     </DashboardView>
   );
+}
+
+export function RedirectShortUrl() {
+  const { shortCode } = useParams();
+  useEffect(() => {
+    if (shortCode) {
+      window.location.href = `http://localhost:3000/${shortCode}`;
+    }
+  }, [shortCode]);
+  return null;
 }
 
 export default App;
