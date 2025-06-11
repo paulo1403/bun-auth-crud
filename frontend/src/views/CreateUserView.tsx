@@ -6,11 +6,14 @@ import {
   Typography,
   Alert,
   Paper,
-  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 const schema = yup.object({
   name: yup.string().required('El nombre es obligatorio'),
@@ -44,6 +47,8 @@ export default function CreateUserView({
     handleSubmit,
     reset,
     setValue,
+    watch,
+    control,
     formState: { errors },
   } = useForm<CreateUserForm>({ resolver: yupResolver(schema) });
 
@@ -108,9 +113,6 @@ export default function CreateUserView({
   return (
     <Box mt={4} display='flex' justifyContent='center'>
       <Paper sx={{ p: 4, minWidth: 350 }}>
-        <Typography variant='h6' gutterBottom>
-          Crear nuevo usuario
-        </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField
             label='Nombre'
@@ -141,19 +143,31 @@ export default function CreateUserView({
             helperText={errors.password?.message}
             required
           />
-          <TextField
-            label='Rol'
-            select
-            fullWidth
-            margin='normal'
-            {...register('role')}
-            error={!!errors.role}
-            helperText={errors.role?.message}
-            required
-          >
-            <MenuItem value='user'>Usuario</MenuItem>
-            <MenuItem value='admin'>Administrador</MenuItem>
-          </TextField>
+          <FormControl fullWidth margin='normal' error={!!errors.role}>
+            <InputLabel id='role-select-label'>Rol</InputLabel>
+            <Controller
+              name='role'
+              control={control}
+              render={({ field }) => (
+                <Select
+                  labelId='role-select-label'
+                  id='role-select'
+                  label='Rol'
+                  {...field}
+                  value={field.value || ''}
+                >
+                  <MenuItem value=''>Selecciona un rol</MenuItem>
+                  <MenuItem value='user'>Usuario</MenuItem>
+                  <MenuItem value='admin'>Administrador</MenuItem>
+                </Select>
+              )}
+            />
+            {errors.role && (
+              <Typography color='error' variant='caption'>
+                {errors.role.message}
+              </Typography>
+            )}
+          </FormControl>
           <Button
             type='submit'
             variant='contained'

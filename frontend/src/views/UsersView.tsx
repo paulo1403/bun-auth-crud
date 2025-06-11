@@ -119,7 +119,7 @@ export default function UsersView({ token }: { token: string }) {
         Usuarios registrados
       </Typography>
       {error && <Alert severity='error'>{error}</Alert>}
-      <div style={{ height: 400, width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         <DataGrid
           rows={users}
           columns={columns}
@@ -127,7 +127,6 @@ export default function UsersView({ token }: { token: string }) {
           loading={loading}
           getRowId={(row) => row.id}
           disableRowSelectionOnClick
-          autoHeight
         />
       </div>
       <Dialog open={openModal} onClose={() => setOpenModal(false)}>
