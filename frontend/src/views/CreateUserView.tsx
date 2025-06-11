@@ -48,7 +48,6 @@ export default function CreateUserView({
     handleSubmit,
     reset,
     setValue,
-    watch,
     control,
     formState: { errors },
   } = useForm<CreateUserForm>({ resolver: yupResolver(schema) });

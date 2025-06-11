@@ -35,7 +35,6 @@ function App() {
 
   const userRole = user?.role || '';
 
-  // Configurar baseURL global para axios
   axios.defaults.baseURL = 'http://localhost:3000';
 
   const handleLogin = async (data: LoginForm) => {
