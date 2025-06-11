@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useSnackbar } from 'notistack';
+import { useLoader } from '../contexts/LoaderContext';
 
 const urlSchema = yup.object({
   originalUrl: yup
@@ -26,10 +28,11 @@ export default function UrlsView({ token }: Props) {
     reset,
     formState: { errors },
   } = useForm<UrlForm>({ resolver: yupResolver(urlSchema) });
+  const { enqueueSnackbar } = useSnackbar();
+  const { showLoader, hideLoader } = useLoader();
 
-  const fetchUrls = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchUrls = async () => {
+    showLoader();
     try {
       const res = await fetch('http://localhost:3000/urls', {
         headers: { Authorization: `Bearer ${token}` },
@@ -38,11 +41,11 @@ export default function UrlsView({ token }: Props) {
       if (!res.ok) throw new Error(data.error || 'Error al obtener URLs');
       setUrls(data);
     } catch (err: any) {
-      setError(err.message);
+      enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
-      setLoading(false);
+      hideLoader();
     }
-  }, [token]);
+  };
 
   useEffect(() => {
     fetchUrls();

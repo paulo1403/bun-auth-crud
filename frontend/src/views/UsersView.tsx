@@ -15,17 +15,18 @@ import CreateUserView from './CreateUserView';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { useSnackbar } from 'notistack';
+import { useLoader } from '../contexts/LoaderContext';
 
 export default function UsersView({ token }: { token: string }) {
   const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [openModal, setOpenModal] = useState(false);
   const [editUser, setEditUser] = useState<any | null>(null);
   const { enqueueSnackbar } = useSnackbar();
+  const { showLoader, hideLoader } = useLoader();
 
   const fetchUsers = async () => {
-    setLoading(true);
+    showLoader();
     try {
       const res = await fetch('http://localhost:3000/users', {
         headers: { Authorization: `Bearer ${token}` },
@@ -36,7 +37,7 @@ export default function UsersView({ token }: { token: string }) {
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   };
 
@@ -52,7 +53,7 @@ export default function UsersView({ token }: { token: string }) {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Eliminar usuario?')) return;
-    setLoading(true);
+    showLoader();
     try {
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'DELETE',
@@ -66,7 +67,7 @@ export default function UsersView({ token }: { token: string }) {
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   };
 
@@ -124,7 +125,7 @@ export default function UsersView({ token }: { token: string }) {
           rows={users}
           columns={columns}
           pageSizeOptions={[5]}
-          loading={loading}
+          loading={false}
           getRowId={(row) => row.id}
           disableRowSelectionOnClick
         />

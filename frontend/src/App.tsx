@@ -15,6 +15,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import { SnackbarProvider } from 'notistack';
+import { LoaderProvider } from './contexts/LoaderContext';
 
 function PrivateRoute({ token }: { token: string }) {
   return token ? <Outlet /> : <Navigate to='/login' replace />;
@@ -54,42 +55,48 @@ function App() {
   };
 
   return (
-    <SnackbarProvider
-      maxSnack={3}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-    >
-      <Routes>
-        <Route
-          path='/login'
-          element={
-            <LoginView loading={loading} error={error} onLogin={handleLogin} />
-          }
-        />
-        <Route path='/forgot-password' element={<ForgotPasswordView />} />
-        <Route path='/reset-password' element={<ResetPasswordView />} />
-        <Route element={<PrivateRoute token={token} />}>
-          {' '}
-          {/* Protected routes */}
+    <LoaderProvider>
+      <SnackbarProvider
+        maxSnack={3}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Routes>
           <Route
-            path='/dashboard'
+            path='/login'
             element={
-              <DashboardViewRouter token={token} onLogout={handleLogout} />
+              <LoginView
+                loading={loading}
+                error={error}
+                onLogin={handleLogin}
+              />
             }
-          >
-            <Route path='urls' element={<UrlsView token={token} />} />
-            <Route path='users' element={<UsersView token={token} />} />
-            <Route index element={<Navigate to='urls' replace />} />
+          />
+          <Route path='/forgot-password' element={<ForgotPasswordView />} />
+          <Route path='/reset-password' element={<ResetPasswordView />} />
+          <Route element={<PrivateRoute token={token} />}>
+            {' '}
+            {/* Protected routes */}
+            <Route
+              path='/dashboard'
+              element={
+                <DashboardViewRouter token={token} onLogout={handleLogout} />
+              }
+            >
+              <Route path='urls' element={<UrlsView token={token} />} />
+              <Route path='users' element={<UsersView token={token} />} />
+              <Route index element={<Navigate to='urls' replace />} />
+            </Route>
           </Route>
-        </Route>
-        <Route
-          path='*'
-          element={
-            <Navigate to={token ? '/dashboard/urls' : '/login'} replace />
-          }
-        />
-        <Route path='/:shortCode' element={<RedirectShortUrl />} />
-      </Routes>
-    </SnackbarProvider>
+          <Route
+            path='*'
+            element={
+              <Navigate to={token ? '/dashboard/urls' : '/login'} replace />
+            }
+          />
+          <Route path='/:shortCode' element={<RedirectShortUrl />} />
+        </Routes>
+      </SnackbarProvider>
+    </LoaderProvider>
   );
 }
 

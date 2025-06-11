@@ -11,6 +11,8 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { useLoader } from '../contexts/LoaderContext';
 
 type Props = {
   loading: boolean;
@@ -32,11 +34,50 @@ export type LoginForm = yup.InferType<typeof schema>;
 
 export default function LoginView({ loading, error, onLogin }: Props) {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { showLoader, hideLoader } = useLoader();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({ resolver: yupResolver(schema) });
+
+  const onSubmit = async (data: any) => {
+    showLoader();
+    try {
+      const res = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Error al iniciar sesión');
+      enqueueSnackbar('¡Bienvenido!', { variant: 'success' });
+    } catch (err: any) {
+      enqueueSnackbar(err.message, { variant: 'error' });
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    showLoader();
+    try {
+      const res = await fetch('http://localhost:3000/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const result = await res.json();
+      if (!res.ok)
+        throw new Error(result.error || 'No se pudo enviar el correo');
+      enqueueSnackbar('Correo de recuperación enviado', { variant: 'success' });
+    } catch (err: any) {
+      enqueueSnackbar(err.message, { variant: 'error' });
+    } finally {
+      hideLoader();
+    }
+  };
 
   return (
     <Container maxWidth='sm'>
