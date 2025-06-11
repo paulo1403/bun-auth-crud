@@ -7,6 +7,7 @@ import {
 } from '../controllers/userController';
 import { prisma } from '../config/prisma';
 import type { AuthRequest } from '../types/express';
+import { logAction } from '../utils/auditLog';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -33,19 +34,6 @@ function rateLimitMiddleware(keyFn: (req: any) => string) {
     }
     next();
   };
-}
-
-function logAction(action: string, details: any, req: any) {
-  const user = req.user ? `${req.user.email} (id:${req.user.id})` : 'anon';
-  const log = {
-    timestamp: new Date().toISOString(),
-    user,
-    action,
-    details,
-    ip: req.ip,
-  };
-  // Aquí solo console.log, pero podrías guardar en archivo o base de datos
-  console.log('[AUDIT]', JSON.stringify(log));
 }
 
 router.post(

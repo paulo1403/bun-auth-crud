@@ -9,32 +9,9 @@ import {
   deleteUrlController,
   redirectShortCodeController,
 } from '../controllers/urlController';
+import { logAction } from '../utils/auditLog';
 
 const router = Router();
-
-async function logAction(action: string, details: any, req: any) {
-  const user = req.user ? `${req.user.email} (id:${req.user.id})` : 'anon';
-  const log = {
-    timestamp: new Date().toISOString(),
-    user,
-    action,
-    details,
-    ip: req.ip,
-  };
-  try {
-    await prisma.auditLog.create({
-      data: {
-        user,
-        action,
-        details: JSON.stringify(details),
-        ip: req.ip || '',
-      },
-    });
-  } catch (e) {
-    console.error('Error guardando log de auditoría:', e);
-  }
-  console.log('[AUDIT]', JSON.stringify(log));
-}
 
 router.post('/urls', authenticateToken, async (req: any, res: any) => {
   try {
