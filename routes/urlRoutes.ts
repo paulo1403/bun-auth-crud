@@ -61,6 +61,9 @@ router.delete('/urls/:id', authenticateToken, async (req: any, res: any) => {
   }
 });
 
+// Todas las rutas protegidas y de API arriba
+
+// Esta ruta solo debe usarse cuando el router está montado en /s
 router.get('/:shortCode', redirectShortCodeController);
 
 export default router;

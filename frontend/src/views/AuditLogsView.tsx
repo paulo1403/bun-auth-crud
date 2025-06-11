@@ -14,6 +14,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
 import { useLoader } from '../contexts/LoaderContext';
+import axios from 'axios';
 
 export default function AuditLogsView({
   token,
@@ -35,46 +36,24 @@ export default function AuditLogsView({
   const { showLoader, hideLoader } = useLoader();
 
   useEffect(() => {
-    if (!isAdmin) return;
-    fetchLogs(page, pageSize, search, action, user, dateFrom, dateTo);
-  }, [page, pageSize, search, action, user, dateFrom, dateTo, isAdmin]);
-
-  const fetchLogs = async (
-    page: number,
-    pageSize: number,
-    search: string,
-    action: string,
-    user: string,
-    dateFrom: string,
-    dateTo: string
-  ) => {
-    showLoader();
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(pageSize),
-        ...(search && { search }),
-        ...(action && { action }),
-        ...(user && { user }),
-        ...(dateFrom && { dateFrom }),
-        ...(dateTo && { dateTo }),
-      });
-      const res = await fetch(
-        `http://localhost:3000/audit-logs?${params.toString()}`,
-        {
+    const fetchLogs = async () => {
+      showLoader();
+      try {
+        const res = await axios.get('/api/audit-logs', {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al obtener logs');
-      setLogs(data.logs);
-      setTotal(data.total);
-    } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
-    } finally {
-      hideLoader();
-    }
-  };
+        });
+        setLogs(res.data.logs);
+        setTotal(res.data.total);
+      } catch (err: any) {
+        enqueueSnackbar(err.response?.data?.error || err.message, {
+          variant: 'error',
+        });
+      } finally {
+        hideLoader();
+      }
+    };
+    if (isAdmin) fetchLogs();
+  }, [token, isAdmin]);
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },

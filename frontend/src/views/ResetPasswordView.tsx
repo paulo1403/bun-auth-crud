@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const schema = yup.object({
   token: yup.string().required('El token es obligatorio'),
@@ -37,19 +38,13 @@ export default function ResetPasswordView() {
     setSuccess('');
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Error');
+      await axios.post('/api/reset-password', data);
       setSuccess(
         'Contraseña actualizada correctamente. Redirigiendo al login...'
       );
       setTimeout(() => navigate('/login', { replace: true }), 1800);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }

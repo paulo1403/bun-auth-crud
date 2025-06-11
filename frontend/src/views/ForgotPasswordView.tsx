@@ -7,6 +7,7 @@ import {
   Alert,
   Paper,
 } from '@mui/material';
+import axios from 'axios';
 
 export default function ForgotPasswordView() {
   const [email, setEmail] = useState('');
@@ -23,16 +24,10 @@ export default function ForgotPasswordView() {
     setResult(null);
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error');
-      setResult(data);
+      const res = await axios.post('/api/forgot-password', { email });
+      setResult(res.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }

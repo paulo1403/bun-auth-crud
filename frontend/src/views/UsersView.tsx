@@ -16,6 +16,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { useSnackbar } from 'notistack';
 import { useLoader } from '../contexts/LoaderContext';
+import axios from 'axios';
 
 export default function UsersView({ token }: { token: string }) {
   const [users, setUsers] = useState<any[]>([]);
@@ -25,25 +26,24 @@ export default function UsersView({ token }: { token: string }) {
   const { enqueueSnackbar } = useSnackbar();
   const { showLoader, hideLoader } = useLoader();
 
-  const fetchUsers = async () => {
-    showLoader();
-    try {
-      const res = await fetch('http://localhost:3000/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al obtener usuarios');
-      setUsers(data);
-    } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
-    } finally {
-      hideLoader();
-    }
-  };
-
   useEffect(() => {
+    const fetchUsers = async () => {
+      showLoader();
+      try {
+        const res = await axios.get('/api/users', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUsers(res.data);
+      } catch (err: any) {
+        enqueueSnackbar(err.response?.data?.error || err.message, {
+          variant: 'error',
+        });
+      } finally {
+        hideLoader();
+      }
+    };
     fetchUsers();
-  }, [refresh]);
+  }, [token, refresh]);
 
   const handleUserCreated = () => {
     setRefresh((r) => r + 1);
@@ -55,17 +55,17 @@ export default function UsersView({ token }: { token: string }) {
     if (!window.confirm('¿Eliminar usuario?')) return;
     showLoader();
     try {
-      const res = await fetch(`http://localhost:3000/users/${id}`, {
-        method: 'DELETE',
+      await axios.delete(`/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('No se pudo eliminar el usuario');
       setRefresh((r) => r + 1);
       enqueueSnackbar('Usuario eliminado correctamente', {
         variant: 'success',
       });
     } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.error || err.message, {
+        variant: 'error',
+      });
     } finally {
       hideLoader();
     }

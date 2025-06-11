@@ -14,6 +14,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import axios from 'axios';
 
 const schema = yup.object({
   name: yup.string().required('El nombre es obligatorio'),
@@ -68,43 +69,21 @@ export default function CreateUserView({
     setSuccess('');
     setLoading(true);
     try {
-      let res, result;
       if (userToEdit) {
-        res = await fetch(`http://localhost:3000/users/${userToEdit.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-            role: data.role,
-            password: data.password,
-          }),
+        await axios.put(`/api/users/${userToEdit.id}`, data, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        result = await res.json();
-        if (!res.ok)
-          throw new Error(result.error || 'No se pudo editar el usuario');
         setSuccess('Usuario editado correctamente');
       } else {
-        res = await fetch('http://localhost:3000/users', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(data),
+        await axios.post('/api/users', data, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        result = await res.json();
-        if (!res.ok)
-          throw new Error(result.error || 'No se pudo crear el usuario');
         setSuccess('Usuario creado correctamente');
         reset();
       }
       onUserCreated?.();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }

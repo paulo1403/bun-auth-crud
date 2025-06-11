@@ -17,6 +17,7 @@ import {
 } from 'react-router-dom';
 import { SnackbarProvider } from 'notistack';
 import { LoaderProvider } from './contexts/LoaderContext';
+import axios from 'axios';
 
 function PrivateRoute({ token }: { token: string }) {
   return token ? <Outlet /> : <Navigate to='/login' replace />;
@@ -34,24 +35,21 @@ function App() {
 
   const userRole = user?.role || '';
 
+  // Configurar baseURL global para axios
+  axios.defaults.baseURL = 'http://localhost:3000';
+
   const handleLogin = async (data: LoginForm) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Login failed');
-      setToken(result.token);
-      setUser(result.user);
-      localStorage.setItem('token', result.token);
-      localStorage.setItem('user', JSON.stringify(result.user));
+      const res = await axios.post('/api/login', data);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       navigate('/dashboard/urls', { replace: true });
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
@@ -154,7 +152,7 @@ export function RedirectShortUrl() {
   const { shortCode } = useParams();
   useEffect(() => {
     if (shortCode) {
-      window.location.href = `http://localhost:3000/${shortCode}`;
+      window.location.href = `http://localhost:3000/s/${shortCode}`;
     }
   }, [shortCode]);
   return null;

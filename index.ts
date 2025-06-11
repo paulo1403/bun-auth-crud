@@ -10,9 +10,10 @@ const port = 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use('/', userRoutes);
-app.use('/', urlRoutes);
-app.use('/', auditLogRoutes);
+app.use('/api', userRoutes);
+app.use('/api', auditLogRoutes);
+app.use('/api', urlRoutes);
+app.use('/s', urlRoutes); // Solo para la redirección pública
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

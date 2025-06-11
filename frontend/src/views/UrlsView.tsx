@@ -7,6 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useSnackbar } from 'notistack';
 import { useLoader } from '../contexts/LoaderContext';
+import axios from 'axios';
 
 function useDebouncedValue<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -39,6 +40,8 @@ export default function UrlsView({ token }: Props) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const debouncedSearch = useDebouncedValue(search, 350);
   const {
     register,
@@ -49,55 +52,37 @@ export default function UrlsView({ token }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const { showLoader, hideLoader } = useLoader();
 
-  const fetchUrls = async (page = 1, pageSize = 5, searchValue = '') => {
-    showLoader();
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(pageSize),
-        search: searchValue,
-      });
-      const res = await fetch(
-        `http://localhost:3000/urls?${params.toString()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al obtener URLs');
-      setUrls(data.urls);
-      setTotal(data.total);
-      setPage(page);
-      setPageSize(pageSize);
-    } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
-    } finally {
-      hideLoader();
-    }
-  };
-
   useEffect(() => {
-    fetchUrls(page, pageSize, debouncedSearch);
-  }, [page, pageSize, debouncedSearch]);
+    const fetchUrls = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await axios.get('/api/urls', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUrls(res.data);
+      } catch (err: any) {
+        setError(err.response?.data?.error || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUrls();
+  }, [token]);
 
   const onSubmit = async (data: UrlForm) => {
     showLoader();
     try {
-      const res = await fetch('http://localhost:3000/urls', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
+      const res = await axios.post('/api/urls', data, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'No se pudo acortar la URL');
+      setUrls((prev) => [...prev, res.data]);
       reset();
-      await fetchUrls(page, pageSize, debouncedSearch);
       enqueueSnackbar('URL acortada correctamente', { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.error || err.message, {
+        variant: 'error',
+      });
     } finally {
       hideLoader();
     }
@@ -107,15 +92,15 @@ export default function UrlsView({ token }: Props) {
     if (!window.confirm('¿Eliminar URL?')) return;
     showLoader();
     try {
-      const res = await fetch(`http://localhost:3000/urls/${id}`, {
-        method: 'DELETE',
+      await axios.delete(`/api/urls/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('No se pudo eliminar la URL');
       setUrls((prev) => prev.filter((url) => url.id !== id));
       enqueueSnackbar('URL eliminada correctamente', { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message, { variant: 'error' });
+      enqueueSnackbar(err.response?.data?.error || err.message, {
+        variant: 'error',
+      });
     } finally {
       hideLoader();
     }
