@@ -31,3 +31,12 @@ model Url {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  user      String
+  action    String
+  details   String
+  ip        String
+}
