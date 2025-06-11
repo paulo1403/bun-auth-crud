@@ -21,8 +21,30 @@ export async function createUrlController(req: any, res: any) {
 }
 
 export async function getUrlsController(req: any, res: any) {
-  const urls = await prisma.url.findMany({ where: { userId: req.user.id } });
-  res.json(urls);
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 5;
+  const search = req.query.search ? String(req.query.search) : '';
+  const userId = req.user.id;
+
+  const where: any = { userId };
+  if (search) {
+    where.OR = [
+      { originalUrl: { contains: search, mode: 'insensitive' } },
+      { shortCode: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const [urls, total] = await Promise.all([
+    prisma.url.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.url.count({ where }),
+  ]);
+
+  res.json({ urls, total });
 }
 
 export async function getUrlController(req: any, res: any) {

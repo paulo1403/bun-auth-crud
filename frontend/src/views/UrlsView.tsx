@@ -1,12 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
+import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useSnackbar } from 'notistack';
 import { useLoader } from '../contexts/LoaderContext';
+
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
+}
 
 const urlSchema = yup.object({
   originalUrl: yup
@@ -26,6 +35,11 @@ type Props = { token: string };
 
 export default function UrlsView({ token }: Props) {
   const [urls, setUrls] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [total, setTotal] = useState(0);
+  const debouncedSearch = useDebouncedValue(search, 350);
   const {
     register,
     handleSubmit,
@@ -35,15 +49,26 @@ export default function UrlsView({ token }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const { showLoader, hideLoader } = useLoader();
 
-  const fetchUrls = async () => {
+  const fetchUrls = async (page = 1, pageSize = 5, searchValue = '') => {
     showLoader();
     try {
-      const res = await fetch('http://localhost:3000/urls', {
-        headers: { Authorization: `Bearer ${token}` },
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        search: searchValue,
       });
+      const res = await fetch(
+        `http://localhost:3000/urls?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al obtener URLs');
-      setUrls(data);
+      setUrls(data.urls);
+      setTotal(data.total);
+      setPage(page);
+      setPageSize(pageSize);
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
@@ -52,8 +77,9 @@ export default function UrlsView({ token }: Props) {
   };
 
   useEffect(() => {
-    fetchUrls();
-  }, []);
+    fetchUrls(page, pageSize, debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, debouncedSearch]);
 
   const onSubmit = async (data: UrlForm) => {
     showLoader();
@@ -69,7 +95,7 @@ export default function UrlsView({ token }: Props) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'No se pudo acortar la URL');
       reset();
-      await fetchUrls();
+      await fetchUrls(page, pageSize, debouncedSearch);
       enqueueSnackbar('URL acortada correctamente', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message, { variant: 'error' });
@@ -95,6 +121,15 @@ export default function UrlsView({ token }: Props) {
       hideLoader();
     }
   };
+
+  const filteredUrls = useMemo(() => {
+    if (!debouncedSearch) return urls;
+    return urls.filter(
+      (url) =>
+        url.originalUrl.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        url.shortCode.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [urls, debouncedSearch]);
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
@@ -136,6 +171,11 @@ export default function UrlsView({ token }: Props) {
     },
   ];
 
+  const handlePaginationModelChange = (model: GridPaginationModel) => {
+    setPage(model.page + 1);
+    setPageSize(model.pageSize);
+  };
+
   return (
     <Box>
       <Typography variant='h6' gutterBottom>
@@ -157,6 +197,15 @@ export default function UrlsView({ token }: Props) {
           Acortar
         </Button>
       </form>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField
+          label='Buscar URL o código'
+          variant='outlined'
+          size='small'
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </Box>
       <Box mt={4}>
         <Typography variant='h6' gutterBottom>
           Tus URLs acortadas
@@ -165,7 +214,12 @@ export default function UrlsView({ token }: Props) {
           <DataGrid
             rows={urls}
             columns={columns}
-            pageSizeOptions={[5]}
+            pageSizeOptions={[5, 10, 20]}
+            pagination
+            paginationMode='server'
+            rowCount={total}
+            paginationModel={{ page: page - 1, pageSize }}
+            onPaginationModelChange={handlePaginationModelChange}
             disableRowSelectionOnClick
             getRowId={(row: any) => row.id}
           />
