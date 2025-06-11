@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Alert } from '@mui/material';
+import { Box, Typography, TextField, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useForm } from 'react-hook-form';
@@ -11,8 +11,14 @@ import { useLoader } from '../contexts/LoaderContext';
 const urlSchema = yup.object({
   originalUrl: yup
     .string()
-    .url('URL inválida')
-    .required('La URL es obligatoria'),
+    .url('Ingresa una URL válida, por ejemplo: https://ejemplo.com')
+    .required('La URL es obligatoria')
+    .test(
+      'is-http-or-https',
+      'La URL debe comenzar con http:// o https://',
+      (value) =>
+        !!value && (value.startsWith('http://') || value.startsWith('https://'))
+    ),
 });
 type UrlForm = yup.InferType<typeof urlSchema>;
 
@@ -142,7 +148,9 @@ export default function UrlsView({ token }: Props) {
           margin='normal'
           {...register('originalUrl')}
           error={!!errors.originalUrl}
-          helperText={errors.originalUrl?.message}
+          helperText={
+            errors.originalUrl?.message || 'Ejemplo: https://midominio.com'
+          }
           required
         />
         <Button type='submit' variant='contained'>
