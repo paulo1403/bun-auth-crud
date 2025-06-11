@@ -2,7 +2,6 @@ import {
   Box,
   Typography,
   Button,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -15,18 +14,18 @@ import { useEffect, useState } from 'react';
 import CreateUserView from './CreateUserView';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import { useSnackbar } from 'notistack';
 
 export default function UsersView({ token }: { token: string }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [openModal, setOpenModal] = useState(false);
   const [editUser, setEditUser] = useState<any | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const fetchUsers = async () => {
     setLoading(true);
-    setError('');
     try {
       const res = await fetch('http://localhost:3000/users', {
         headers: { Authorization: `Bearer ${token}` },
@@ -35,7 +34,7 @@ export default function UsersView({ token }: { token: string }) {
       if (!res.ok) throw new Error(data.error || 'Error al obtener usuarios');
       setUsers(data);
     } catch (err: any) {
-      setError(err.message);
+      enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -54,7 +53,6 @@ export default function UsersView({ token }: { token: string }) {
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Eliminar usuario?')) return;
     setLoading(true);
-    setError('');
     try {
       const res = await fetch(`http://localhost:3000/users/${id}`, {
         method: 'DELETE',
@@ -62,8 +60,11 @@ export default function UsersView({ token }: { token: string }) {
       });
       if (!res.ok) throw new Error('No se pudo eliminar el usuario');
       setRefresh((r) => r + 1);
+      enqueueSnackbar('Usuario eliminado correctamente', {
+        variant: 'success',
+      });
     } catch (err: any) {
-      setError(err.message);
+      enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -118,7 +119,6 @@ export default function UsersView({ token }: { token: string }) {
       <Typography variant='h6' sx={{ mb: 2 }}>
         Usuarios registrados
       </Typography>
-      {error && <Alert severity='error'>{error}</Alert>}
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <DataGrid
           rows={users}
