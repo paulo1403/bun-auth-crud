@@ -1,9 +1,10 @@
 import { Box, Typography, Button } from '@mui/material';
 
 type Props = {
-  dashboardView: 'usuarios' | 'urls';
-  setDashboardView: (v: 'usuarios' | 'urls') => void;
+  dashboardView: 'usuarios' | 'urls' | 'logs';
+  setDashboardView: (v: 'usuarios' | 'urls' | 'logs') => void;
   onLogout: () => void;
+  isAdmin: boolean;
   children: React.ReactNode;
 };
 
@@ -11,6 +12,7 @@ export default function DashboardView({
   dashboardView,
   setDashboardView,
   onLogout,
+  isAdmin,
   children,
 }: Props) {
   return (
@@ -39,6 +41,14 @@ export default function DashboardView({
           >
             URLs cortas
           </Button>
+          {isAdmin && (
+            <Button
+              variant={dashboardView === 'logs' ? 'contained' : 'outlined'}
+              onClick={() => setDashboardView('logs')}
+            >
+              Logs de auditoría
+            </Button>
+          )}
           <Button
             variant='text'
             color='error'

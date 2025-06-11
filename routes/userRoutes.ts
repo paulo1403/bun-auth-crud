@@ -49,7 +49,9 @@ router.post(
         JWT_SECRET,
         { expiresIn: '1h' }
       );
-      res.json({ token });
+      // Excluir la contraseña
+      const { password, ...userWithoutPassword } = user;
+      res.json({ token, user: userWithoutPassword });
     }
   }
 );

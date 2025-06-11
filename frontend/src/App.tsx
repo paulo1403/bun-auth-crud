@@ -6,6 +6,7 @@ import UsersView from './views/UsersView';
 import UrlsView from './views/UrlsView';
 import ForgotPasswordView from './views/ForgotPasswordView';
 import ResetPasswordView from './views/ResetPasswordView';
+import AuditLogsView from './views/AuditLogsView';
 import {
   Routes,
   Route,
@@ -25,7 +26,13 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  const [user, setUser] = useState<any>(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  });
   const navigate = useNavigate?.() ?? (() => {});
+
+  const userRole = user?.role || '';
 
   const handleLogin = async (data: LoginForm) => {
     setLoading(true);
@@ -39,7 +46,9 @@ function App() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Login failed');
       setToken(result.token);
+      setUser(result.user);
       localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
       navigate('/dashboard/urls', { replace: true });
     } catch (err: any) {
       setError(err.message);
@@ -50,7 +59,9 @@ function App() {
 
   const handleLogout = () => {
     setToken('');
+    setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/login', { replace: true });
   };
 
@@ -74,16 +85,24 @@ function App() {
           <Route path='/forgot-password' element={<ForgotPasswordView />} />
           <Route path='/reset-password' element={<ResetPasswordView />} />
           <Route element={<PrivateRoute token={token} />}>
-            {' '}
-            {/* Protected routes */}
             <Route
               path='/dashboard'
               element={
-                <DashboardViewRouter token={token} onLogout={handleLogout} />
+                <DashboardViewRouter
+                  token={token}
+                  onLogout={handleLogout}
+                  userRole={userRole}
+                />
               }
             >
               <Route path='urls' element={<UrlsView token={token} />} />
               <Route path='users' element={<UsersView token={token} />} />
+              <Route
+                path='logs'
+                element={
+                  <AuditLogsView token={token} isAdmin={userRole === 'admin'} />
+                }
+              />
               <Route index element={<Navigate to='urls' replace />} />
             </Route>
           </Route>
@@ -103,21 +122,28 @@ function App() {
 function DashboardViewRouter({
   token,
   onLogout,
+  userRole,
 }: {
   token: string;
   onLogout: () => void;
+  userRole: string;
 }) {
   const navigate = useNavigate();
   const path = window.location.pathname;
-  const dashboardView = path.includes('/users') ? 'usuarios' : 'urls';
-  const setDashboardView = (v: 'usuarios' | 'urls') => {
-    navigate(v === 'usuarios' ? '/dashboard/users' : '/dashboard/urls');
+  let dashboardView: 'usuarios' | 'urls' | 'logs' = 'urls';
+  if (path.includes('/users')) dashboardView = 'usuarios';
+  else if (path.includes('/logs')) dashboardView = 'logs';
+  const setDashboardView = (v: 'usuarios' | 'urls' | 'logs') => {
+    if (v === 'usuarios') navigate('/dashboard/users');
+    else if (v === 'logs') navigate('/dashboard/logs');
+    else navigate('/dashboard/urls');
   };
   return (
     <DashboardView
       dashboardView={dashboardView}
       setDashboardView={setDashboardView}
       onLogout={onLogout}
+      isAdmin={userRole === 'admin'}
     >
       <Outlet />
     </DashboardView>
