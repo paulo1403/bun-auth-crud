@@ -20,8 +20,6 @@ type Props = { token: string };
 
 export default function UrlsView({ token }: Props) {
   const [urls, setUrls] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const {
     register,
     handleSubmit,
@@ -49,11 +47,10 @@ export default function UrlsView({ token }: Props) {
 
   useEffect(() => {
     fetchUrls();
-  }, [fetchUrls]);
+  }, []);
 
   const onSubmit = async (data: UrlForm) => {
-    setLoading(true);
-    setError('');
+    showLoader();
     try {
       const res = await fetch('http://localhost:3000/urls', {
         method: 'POST',
@@ -66,11 +63,30 @@ export default function UrlsView({ token }: Props) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'No se pudo acortar la URL');
       reset();
-      fetchUrls();
+      await fetchUrls();
+      enqueueSnackbar('URL acortada correctamente', { variant: 'success' });
     } catch (err: any) {
-      setError(err.message);
+      enqueueSnackbar(err.message, { variant: 'error' });
     } finally {
-      setLoading(false);
+      hideLoader();
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Eliminar URL?')) return;
+    showLoader();
+    try {
+      const res = await fetch(`http://localhost:3000/urls/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('No se pudo eliminar la URL');
+      setUrls((prev) => prev.filter((url) => url.id !== id));
+      enqueueSnackbar('URL eliminada correctamente', { variant: 'success' });
+    } catch (err: any) {
+      enqueueSnackbar(err.message, { variant: 'error' });
+    } finally {
+      hideLoader();
     }
   };
 
@@ -98,6 +114,20 @@ export default function UrlsView({ token }: Props) {
         return isNaN(date.getTime()) ? '' : date.toLocaleString();
       },
     },
+    {
+      field: 'actions',
+      headerName: 'Acciones',
+      width: 120,
+      renderCell: (params: any) => (
+        <Button
+          color='error'
+          size='small'
+          onClick={() => handleDelete(params.row.id)}
+        >
+          Eliminar
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -115,15 +145,10 @@ export default function UrlsView({ token }: Props) {
           helperText={errors.originalUrl?.message}
           required
         />
-        <Button type='submit' variant='contained' disabled={loading}>
-          {loading ? 'Acortando...' : 'Acortar'}
+        <Button type='submit' variant='contained'>
+          Acortar
         </Button>
       </form>
-      {error && (
-        <Alert severity='error' sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
       <Box mt={4}>
         <Typography variant='h6' gutterBottom>
           Tus URLs acortadas
@@ -133,10 +158,8 @@ export default function UrlsView({ token }: Props) {
             rows={urls}
             columns={columns}
             pageSizeOptions={[5]}
-            loading={loading}
             disableRowSelectionOnClick
             getRowId={(row: any) => row.id}
-            autoHeight
           />
         </div>
       </Box>
