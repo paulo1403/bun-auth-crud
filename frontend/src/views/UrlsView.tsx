@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
@@ -78,7 +78,6 @@ export default function UrlsView({ token }: Props) {
 
   useEffect(() => {
     fetchUrls(page, pageSize, debouncedSearch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, debouncedSearch]);
 
   const onSubmit = async (data: UrlForm) => {
@@ -121,15 +120,6 @@ export default function UrlsView({ token }: Props) {
       hideLoader();
     }
   };
-
-  const filteredUrls = useMemo(() => {
-    if (!debouncedSearch) return urls;
-    return urls.filter(
-      (url) =>
-        url.originalUrl.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        url.shortCode.toLowerCase().includes(debouncedSearch.toLowerCase())
-    );
-  }, [urls, debouncedSearch]);
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
